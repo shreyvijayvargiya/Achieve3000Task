@@ -1,6 +1,14 @@
-#Materila UI installation with Next JS
+#Frontend simple demo task
 
-##This repo gives basic understanding of material ui installation with Next jS
+Api used are => 
+# https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_information
+# https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_status
 
-Read the article for better understanding 
-### https://shreyvijayvargiya26.medium.com/perfect-ui-library-with-react-813f41704584
+## Tech Stack 
+- React
+- Next JS
+- Materila UI
+- Redux 
+- Axios
+
+
