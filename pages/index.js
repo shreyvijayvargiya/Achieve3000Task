@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Accordion, Paper, Grid, AccordionSummary, AccordionDetails, CircularProgress, Typography } from '@material-ui/core';
+import { Button, Accordion, Paper, Grid, AccordionSummary,Input, AccordionDetails, CircularProgress, Typography, TextField, InputAdornment } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -11,6 +11,8 @@ const App = () => {
         stationsStatus: [],
         singleStationStatus: true
     });
+    const [searchValue, setSearchValue] = useState("");
+    const [searchLoader, setSearchLoader]= useState(true);
     const [loader, setLoader] = useState(true);
     
     const fetchStationInformationData = () => axios.get('https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_information');
@@ -19,8 +21,14 @@ const App = () => {
     const fetchBothStationInformationAndStationStatus = () => {
         const response = axios.all([ fetchStationInformationData(), fetchStationsStatusData()]);
         response.then(axios.spread((data1, data2) => {
+            const sortStationInformatonData = data1.data.data.stations.splice(0, 50).sort((a, b) => {
+                if(a.name < b.name){ return -1 };
+                if(a.name > b.name) { return 1 };
+                return 0;
+            });
+
            setStationsData({
-               stationsInformation: data1.data.data.stations.splice(0, 50),
+               stationsInformation: sortStationInformatonData,
                stationsStatus: data2.data.data.stations
            });
            setLoader(false);
@@ -39,7 +47,6 @@ const App = () => {
                 return item
             }
         });
-        console.log(singleStationData[0])
         return (
             <AccordionDetails>
                 <Typography variant="body1">
@@ -49,6 +56,24 @@ const App = () => {
         );
     };
 
+    const filterData = (e) => {
+        setLoader(true);
+        const val = e.target.value;
+        if(val.length>0){
+            setSearchValue(val);
+            const searchedData = stationsData.stationsInformation.filter(item => {
+                if(item.name.includes(val)){
+                    return item
+                }
+            });
+            setLoader(false)
+            setStationsData(prevState => ({ ...prevState, stationsInformation: searchedData }))
+        }else {
+            setLoader(false);
+            setSearchValue("")
+            return
+        }
+    }
     return (
         <div className={styles.root}>
             <Grid container justify="space-between" alignItems="center" className={styles.heading}>
@@ -73,7 +98,17 @@ const App = () => {
                 </Grid>
             </Grid>
             <Paper elevation={4} className={styles.container}>
-                <p>Search Button</p>
+                <TextField 
+                    fullWidth
+                    onChange={(e) => filterData(e)}
+                    value={searchValue}
+                    type="text"
+                    placeholder="Search by name"
+                    color="primary"
+                    variant="outlined"
+                />
+                <br />
+                <br />
                 {!loader && stationsData.stationsInformation.length> 0 ? (
                     stationsData.stationsInformation.map((item, index) => {
                         return (
@@ -82,6 +117,7 @@ const App = () => {
                                     expandIcon={<ExpandMoreIcon />}
                                     aria-controls="panel1a-content"
                                     id="panel1a-header"
+                                    className={styles.accordionHeading}
                                     >
                                     <Typography variant="h6">{item.name} {item.capacity}</Typography>
                                 </AccordionSummary>
@@ -122,14 +158,16 @@ const useStyles = makeStyles(theme => ({
     item: {
         marginTop: theme.spacing(2),
         marginBottom: theme.spacing(2),
-        "&:hover": {
-            backgroundColor: '#EEEEEE'
-        }
     },
     headingText: {
         textAlign: 'left',
         [theme.breakpoints.down('md')]:{
             textAlign: 'center'
+        }
+    },
+    accordionHeading: {
+        "&:hover": {
+            backgroundColor: '#EEEEEE'
         }
     },
     button: {
