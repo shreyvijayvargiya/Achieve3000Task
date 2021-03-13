@@ -17,7 +17,6 @@ export const setStationStatus = (data) => {
     }
 };
 export const setSearchedData = (data) => {
-    console.log(data, 'dataaaa');
     return async dispatch => {
         dispatch({
             type: ADD_SEARCHED_DATA,

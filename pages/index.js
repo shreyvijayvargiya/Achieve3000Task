@@ -144,7 +144,6 @@ const App = () => {
                             })
                         ):
                         data.searchedData.map((item, index) => {
-                            console.log(item, 'item')
                             return (
                                 <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
                                     <AccordionSummary
