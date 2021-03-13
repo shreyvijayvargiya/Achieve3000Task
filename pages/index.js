@@ -3,14 +3,20 @@ import { Button, Accordion, Paper, Grid, AccordionSummary,Input, AccordionDetail
 import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import { setStationInformations, setStationStatus, setSearchedData } from '../Redux/action/addStationsInformation';
+import { useDispatch, useSelector } from 'react-redux';
 
 const App = () => {
     const styles = useStyles();
     const [stationsData, setStationsData] = useState({
         stationsInformation: [],
         stationsStatus: [],
-        singleStationStatus: true
+        singleStationStatus: true,
+        searchedData: []
     });
+    const data = useSelector(state => state);
+    const dispatch = useDispatch();
+    
     const [searchValue, setSearchValue] = useState("");
     const [searchLoader, setSearchLoader]= useState(true);
     const [loader, setLoader] = useState(true);
@@ -26,18 +32,27 @@ const App = () => {
                 if(a.name > b.name) { return 1 };
                 return 0;
             });
-
-           setStationsData({
-               stationsInformation: sortStationInformatonData,
-               stationsStatus: data2.data.data.stations
-           });
-           setLoader(false);
+            dispatch(setStationInformations(sortStationInformatonData));
+            dispatch(setStationStatus(data2.data.data.stations))
+            setLoader(false);
         }));
+    };
+    
+    const fetchDataFromStore = () => {
+        setLoader(true);
+        setStationsData({
+            stationsInformation: data.stationsInformation,
+            stationsStatus: data.stationsStatus,
+            searchedData: data.searchedData,
+            singleStationStatus: true,
+        });
         if(loader && stationsData.stationsInformation.length > 0 && stationsData.stationsStatus.length > 0) setLoader(false);
     }
+    
 
     useEffect(() => {
         fetchBothStationInformationAndStationStatus();
+        fetchDataFromStore();
     }, []);
 
     
@@ -61,13 +76,13 @@ const App = () => {
         const val = e.target.value;
         if(val.length>0){
             setSearchValue(val);
-            const searchedData = stationsData.stationsInformation.filter(item => {
-                if(item.name.includes(val)){
+            const searchedData = data.stationsInformation.filter(item => {
+                if((item.name).toUpperCase().includes(val.toUpperCase())){
                     return item
                 }
             });
-            setLoader(false)
-            setStationsData(prevState => ({ ...prevState, stationsInformation: searchedData }))
+            dispatch(setSearchedData(searchedData));
+            setLoader(false);
         }else {
             setLoader(false);
             setSearchValue("")
@@ -109,22 +124,43 @@ const App = () => {
                 />
                 <br />
                 <br />
-                {!loader && stationsData.stationsInformation.length> 0 ? (
-                    stationsData.stationsInformation.map((item, index) => {
-                        return (
-                            <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    aria-controls="panel1a-content"
-                                    id="panel1a-header"
-                                    className={styles.accordionHeading}
-                                    >
-                                    <Typography variant="h6">{item.name} {item.capacity}</Typography>
-                                </AccordionSummary>
-                                {stationsData.singleStationStatus && StationStatus(item.station_id)}
-                            </Accordion>
-                        )
-                    })
+                {!loader ? (
+                    <div>
+                        {searchValue.length === 0 && data.searchedData.length === 0 ? (
+                            stationsData.stationsInformation.map((item, index) => {
+                                return (
+                                    <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            aria-controls="panel1a-content"
+                                            id="panel1a-header"
+                                            className={styles.accordionHeading}
+                                            >
+                                            <Typography variant="h6">{item.name} {item.capacity}</Typography>
+                                        </AccordionSummary>
+                                        {stationsData.singleStationStatus && StationStatus(item.station_id)}
+                                    </Accordion>
+                                )
+                            })
+                        ):
+                        data.searchedData.map((item, index) => {
+                            console.log(item, 'item')
+                            return (
+                                <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        aria-controls="panel1a-content"
+                                        id="panel1a-header"
+                                        className={styles.accordionHeading}
+                                        >
+                                        <Typography variant="h6">{item.name} {item.capacity}</Typography>
+                                    </AccordionSummary>
+                                    {stationsData.singleStationStatus && StationStatus(item.station_id)}
+                                </Accordion>
+                            )
+                        })
+                    }
+                    </div>
                 ):
                 <CircularProgress style={{ fontSize: 32, color: 'black' }} />
             }

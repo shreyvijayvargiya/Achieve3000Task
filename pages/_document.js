@@ -6,9 +6,7 @@ export default class MyDocument extends Document {
   render() {
     return (
         <Html lang="en">
-            <Head>
-              <title>Achieve3000 Frontend Task</title>
-            </Head>
+            <Head />
             <body>
                 <Main />
                 <NextScript />
