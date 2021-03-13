@@ -11,27 +11,25 @@ import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 
 const App = () => {
     const styles = useStyles();
-    const [stationsData, setStationsData] = useState({
+    const data = useSelector(state => state);
+
+    const [ stationsData, setStationsData ] = useState({
         stationsInformation: [],
         stationsStatus: [],
         singleStationStatus: true,
         searchedData: []
     });
-    const data = useSelector(state => state);
     const dispatch = useDispatch();
-    
     const [searchValue, setSearchValue] = useState("");
     const [searchLoader, setSearchLoader]= useState(true);
     const [loader, setLoader] = useState(true);
-    const [sortValue, setSortValue] = React.useState({
-        name: 'ascending',
-        capacity: 'ascending'
-    })
+    const [sortValue, setSortValue] = React.useState('ascending')
     
     const fetchStationInformationData = () => axios.get('https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_information');
     const fetchStationsStatusData = () => axios.get('https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_status');
 
     const fetchBothStationInformationAndStationStatus = () => {
+        setLoader(true);
         const response = axios.all([ fetchStationInformationData(), fetchStationsStatusData()]);
         response.then(axios.spread((data1, data2) => {
             const sortStationInformatonData = data1.data.data.stations.splice(0, 50).sort((a, b) => {
@@ -41,25 +39,29 @@ const App = () => {
             });
             dispatch(setStationInformations(sortStationInformatonData));
             dispatch(setStationStatus(data2.data.data.stations));
+            setLoader(false);
         }));
     };
     
+   
     const fetchDataFromStore = () => {
-        setLoader(true);
         setStationsData({
             stationsInformation: data.stationsInformation,
             stationsStatus: data.stationsStatus,
             searchedData: data.searchedData,
-            singleStationStatus: true,
+            singleStationStatus: data.singleStationStatus,
         });
-        setLoader(false);
     };
     
-
+    useEffect(() => {
+        fetchDataFromStore();
+    }, [ sortValue, searchValue ])
+  
     useEffect(() => {
         fetchBothStationInformationAndStationStatus();
-        fetchDataFromStore();
     }, []);
+
+   
 
     
     const StationStatus = (id) => {
@@ -71,7 +73,7 @@ const App = () => {
         return (
             <AccordionDetails>
                 <Typography variant="body1">
-                    Capacity {singleStationData[0].num_bikes_available}
+                    Capacity {singleStationData.length > 0 && singleStationData[0].num_bikes_available}
                 </Typography>
             </AccordionDetails>
         );
@@ -97,24 +99,25 @@ const App = () => {
     };
 
     const sortStations = () => {
-        if(sortValue.name === 'ascending'){
+        if(sortValue === 'ascending'){
             const descendingSortedData = stationsData.stationsInformation.sort((a, b) => {
                 if(a.name > b.name){ return - 1 }
                 if(a.name < b.name) { return 1 };
                 return 0 
             });
-            setSortValue({ name: 'descending' , capacity: sortValue.capacity })
-            return dispatch(setStationInformations(descendingSortedData));
+            setSortValue('descending');
+            dispatch(setStationInformations(descendingSortedData));
         }else {
             const ascendingSortedData = stationsData.stationsInformation.sort((a, b) => {
                 if(a.name < b.name){ return - 1 }
                 if(a.name > b.name) { return 1 };
                 return 0 
             });
-            setSortValue({ name: 'ascending' , capacity: sortValue.capacity })
-            return dispatch(setStationInformations(ascendingSortedData));
+            setSortValue('ascending');
+            dispatch(setStationInformations(ascendingSortedData));
         }
-    }
+    };
+    console.log(stationsData.stationsInformation, 'rfnr')
     
     return (
         <div className={styles.root}>
@@ -128,7 +131,7 @@ const App = () => {
                         color="primary"
                         className={styles.button}
                         onClick={() => sortStations()}
-                        startIcon={sortValue.name === 'ascending' ? <ArrowDownwardIcon />:<ArrowUpwardIcon />}
+                        startIcon={sortValue === 'ascending' ? <ArrowDownwardIcon />:<ArrowUpwardIcon />}
                     >
                         Station Name
                     </Button>
@@ -155,8 +158,8 @@ const App = () => {
                 <br />
                 {!loader ? (
                     <div>
-                        {searchValue.length === 0 && data.searchedData.length === 0 ? (
-                            stationsData.stationsInformation.map((item, index) => {
+                        {searchValue.length !== 0 && stationsData.searchedData.length > 0 ? (
+                            stationsData.searchedData.map((item, index) => {
                                 return (
                                     <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
                                         <AccordionSummary
@@ -172,7 +175,7 @@ const App = () => {
                                 )
                             })
                         ):
-                        data.searchedData.map((item, index) => {
+                        stationsData.stationsInformation.map((item, index) => {
                             return (
                                 <Accordion key={index} onClick={() => setStationsData(prevState => ({ ...prevState, singleStationStatus: true }))} className={styles.item}>
                                     <AccordionSummary
