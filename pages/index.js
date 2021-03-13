@@ -5,6 +5,9 @@ import axios from 'axios';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { setStationInformations, setStationStatus, setSearchedData } from '../Redux/action/addStationsInformation';
 import { useDispatch, useSelector } from 'react-redux';
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
+
 
 const App = () => {
     const styles = useStyles();
@@ -20,6 +23,10 @@ const App = () => {
     const [searchValue, setSearchValue] = useState("");
     const [searchLoader, setSearchLoader]= useState(true);
     const [loader, setLoader] = useState(true);
+    const [sortValue, setSortValue] = React.useState({
+        name: 'ascending',
+        capacity: 'ascending'
+    })
     
     const fetchStationInformationData = () => axios.get('https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_information');
     const fetchStationsStatusData = () => axios.get('https://tor.publicbikesystem.net/ube/gbfs/v1/en/station_status');
@@ -33,8 +40,7 @@ const App = () => {
                 return 0;
             });
             dispatch(setStationInformations(sortStationInformatonData));
-            dispatch(setStationStatus(data2.data.data.stations))
-            setLoader(false);
+            dispatch(setStationStatus(data2.data.data.stations));
         }));
     };
     
@@ -46,8 +52,8 @@ const App = () => {
             searchedData: data.searchedData,
             singleStationStatus: true,
         });
-        if(loader && stationsData.stationsInformation.length > 0 && stationsData.stationsStatus.length > 0) setLoader(false);
-    }
+        setLoader(false);
+    };
     
 
     useEffect(() => {
@@ -88,7 +94,28 @@ const App = () => {
             setSearchValue("")
             return
         }
+    };
+
+    const sortStations = () => {
+        if(sortValue.name === 'ascending'){
+            const descendingSortedData = stationsData.stationsInformation.sort((a, b) => {
+                if(a.name > b.name){ return - 1 }
+                if(a.name < b.name) { return 1 };
+                return 0 
+            });
+            setSortValue({ name: 'descending' , capacity: sortValue.capacity })
+            return dispatch(setStationInformations(descendingSortedData));
+        }else {
+            const ascendingSortedData = stationsData.stationsInformation.sort((a, b) => {
+                if(a.name < b.name){ return - 1 }
+                if(a.name > b.name) { return 1 };
+                return 0 
+            });
+            setSortValue({ name: 'ascending' , capacity: sortValue.capacity })
+            return dispatch(setStationInformations(ascendingSortedData));
+        }
     }
+    
     return (
         <div className={styles.root}>
             <Grid container justify="space-between" alignItems="center" className={styles.heading}>
@@ -100,6 +127,8 @@ const App = () => {
                         variant="contained" 
                         color="primary"
                         className={styles.button}
+                        onClick={() => sortStations()}
+                        startIcon={sortValue.name === 'ascending' ? <ArrowDownwardIcon />:<ArrowUpwardIcon />}
                     >
                         Station Name
                     </Button>
@@ -112,7 +141,7 @@ const App = () => {
                     </Button>
                 </Grid>
             </Grid>
-            <Paper elevation={4} className={styles.container}>
+            <Paper elevation={0} className={styles.container}>
                 <TextField 
                     fullWidth
                     onChange={(e) => filterData(e)}
@@ -178,9 +207,11 @@ const useStyles = makeStyles(theme => ({
     container: {
         width: '70%',
         margin: 'auto',
-        height: '80vh',
+        height: '75vh',
         overflow: 'scroll',
-        border: '1px solid #2d2d2d',
+        border: '2px solid #EEEEEE',
+        borderRadius: 10,
+        boxShadow: '4px 4px 4px rgb(0, 0, 0, 0.10)',
         padding: theme.spacing(4),
         [theme.breakpoints.down('md')]:{
             width: '90%',
@@ -213,3 +244,4 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 export default App;
+
